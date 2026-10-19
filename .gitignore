@@ -3,3 +3,4 @@
 secrets/
 *.ova
 *.vdi
+__pycache__/

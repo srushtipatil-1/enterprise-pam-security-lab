@@ -1,0 +1,8 @@
+# /etc/sudoers.d/svc-operator
+# Least privilege: svc-operator may run ONLY these two commands as root.
+# Everything else via sudo is denied and logged to the system journal.
+# Install:  sudo install -m 0440 linux/sudoers-svc-operator /etc/sudoers.d/svc-operator
+# Validate: sudo visudo -cf /etc/sudoers.d/svc-operator
+Cmnd_Alias SSH_OPS = /usr/bin/systemctl restart ssh, /usr/bin/systemctl status ssh
+Defaults:svc-operator log_output, !lecture
+svc-operator ALL=(root) SSH_OPS
