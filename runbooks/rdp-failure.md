@@ -8,13 +8,17 @@ privileged account.
 
 1. **Check server is reachable** — ping the target:
 
-ping <target-ip>
+   ```bash
+   ping <target-ip>
+   ```
 
 2. **Check RDP is enabled** on the target:
    - System Properties → Remote Desktop → confirm "Enable Remote Desktop" is on
 3. **Check port 3389 is open**:
 
-Test-NetConnection <target-ip> -Port 3389
+   ```powershell
+   Test-NetConnection <target-ip> -Port 3389
+   ```
 
 4. **Check firewall rules** — Windows Firewall or network firewall 
    blocking inbound RDP.

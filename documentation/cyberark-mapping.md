@@ -18,6 +18,10 @@ This document maps core CyberArk PAM operational concepts to their equivalent im
 | Operations/troubleshooting | Runbooks (credential access, rotation, SSH, RDP failures) |
 | Least privilege         | UAC elevation (Windows) / sudo group (Linux) |
 | RBAC                    | Vault policies (analyst read-only vs root)   |
+| Vault users / LDAP users | Named userpass identities (analyst1, pamadmin1) |
+| CPM component identity  | AppRole `rotation-service` (write-only policy) |
+| Auditor role / reports  | `scripts/audit_report.py` + `documentation/sop-audit-review.md` |
+| Master/Administrator separation | `pam-admin` cannot disable audit or edit policies; root is break-glass only |
 
 ## Full access lifecycle demonstrated
 

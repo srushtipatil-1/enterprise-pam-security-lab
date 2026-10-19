@@ -1,0 +1,306 @@
+# Vault PAM lab - console session log
+# Recorded: 2026-10-19 11:48-11:57 IST, Windows 11, Vault v2.1.1 (dev mode, in-memory)
+# Captured from the operator's PowerShell console. Login tokens redacted; all lab passwords
+# shown below existed only on the temporary dev server, which has since been stopped.
+
+PS C:\Users\Dell\projects\enterprise-pam-security-lab> Start-Transcript -Path evidence\lab-session-transcript.txt
+Transcript started, output file is evidence\lab-session-transcript.txt
+PS C:\Users\Dell\projects\enterprise-pam-security-lab> $env:VAULT_ADDR = "http://127.0.0.1:8200"
+PS C:\Users\Dell\projects\enterprise-pam-security-lab> vault login -no-print root
+PS C:\Users\Dell\projects\enterprise-pam-security-lab> Set-ExecutionPolicy -Scope Process Bypass -Force
+PS C:\Users\Dell\projects\enterprise-pam-security-lab> .\vault\setup-rbac.ps1
+== 1. Checking Vault is reachable and unsealed
+== 2. KV v2 secrets engine at secret/
+   already enabled (dev mode does this automatically)
+== 3. Audit device (enabled BEFORE any user activity)
+   file audit device -> C:\vault\audit.log
+== 4. RBAC policies
+   analyst, pam-admin, rotation-service written
+AppRole : The term 'AppRole' is not recognized as the name of a cmdlet, function, script file, or operable program.
+Check the spelling of the name, or if a path was included, verify that the path is correct and try again.
+At C:\Users\Dell\projects\enterprise-pam-security-lab\vault\setup-rbac.ps1:74 char:37
++ Write-Host "== 6. Machine identity (AppRole) for password rotation" - ...
++                                     ~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (AppRole:String) [], ParentContainsErrorRecordException
+    + FullyQualifiedErrorId : CommandNotFoundException
+
+PS C:\Users\Dell\projects\enterprise-pam-security-lab>
+PS C:\Users\Dell\projects\enterprise-pam-security-lab> $f = ".\vault\setup-rbac.ps1"; (Get-Content $f -Raw -Encoding UTF8).Replace(" $([char]0x2014) ", " - ") | Set-Content $f -Encoding ASCII -NoNewline
+PS C:\Users\Dell\projects\enterprise-pam-security-lab> $f = ".\scripts\audit_report.py"; (Get-Content $f -Raw -Encoding UTF8).Replace(" $([char]0x2192) ", " to ").Replace("  $([char]0x2190) review:", "  <- review:") | Set-Content $f -Encoding ASCII -NoNewline
+PS C:\Users\Dell\projects\enterprise-pam-security-lab> Select-String -Path .\vault\setup-rbac.ps1, .\scripts\audit_report.py -Pattern '[^\x00-\x7F]'
+PS C:\Users\Dell\projects\enterprise-pam-security-lab>
+PS C:\Users\Dell\projects\enterprise-pam-security-lab> .\vault\setup-rbac.ps1
+== 1. Checking Vault is reachable and unsealed
+== 2. KV v2 secrets engine at secret/
+   already enabled (dev mode does this automatically)
+== 3. Audit device (enabled BEFORE any user activity)
+   file audit device already enabled
+== 4. RBAC policies
+   analyst, pam-admin, rotation-service written
+== 5. Human identities (userpass) - named users, not shared root
+Set a lab password for Vault user 'analyst1': ********
+Set a lab password for Vault user 'pamadmin1': ********
+   analyst1 -> analyst, pamadmin1 -> pam-admin
+== 6. Machine identity (AppRole) for password rotation
+   VAULT_ROLE_ID / VAULT_SECRET_ID set for THIS PowerShell session only (not saved to disk)
+== 7. Seed privileged credential (if missing)
+vault.exe : No value found at secret/data/privileged/linux-admin
+At C:\Users\Dell\projects\enterprise-pam-security-lab\vault\setup-rbac.ps1:84 char:1
++ & vault kv get secret/privileged/linux-admin *> $null
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (No value found ...ged/linux-admin:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+PS C:\Users\Dell\projects\enterprise-pam-security-lab> vault kv put secret/privileged/linux-admin username=linux-admin "password=LabPass123!"
+=========== Secret Path ===========
+secret/data/privileged/linux-admin
+
+======= Metadata =======
+Key                Value
+---                -----
+created_time       2026-10-19T06:23:35.7871899Z
+custom_metadata    <nil>
+deletion_time      n/a
+destroyed          false
+version            1
+PS C:\Users\Dell\projects\enterprise-pam-security-lab> vault policy list
+analyst
+default
+default-ceiling
+pam-admin
+rotation-service
+root
+PS C:\Users\Dell\projects\enterprise-pam-security-lab> vault auth list
+Path         Type        Accessor                  Description                Version
+----         ----        --------                  -----------                -------
+approle/     approle     auth_approle_e67803a7     n/a                        n/a
+token/       token       auth_token_87d72667       token based credentials    n/a
+userpass/    userpass    auth_userpass_0b88997a    n/a                        n/a
+PS C:\Users\Dell\projects\enterprise-pam-security-lab> vault audit list
+Path     Type    Description
+----     ----    -----------
+file/    file    n/a
+PS C:\Users\Dell\projects\enterprise-pam-security-lab> if ($env:VAULT_ROLE_ID -and $env:VAULT_SECRET_ID) { "AppRole credentials ready" }
+AppRole credentials ready
+PS C:\Users\Dell\projects\enterprise-pam-security-lab> vault login -method=userpass username=analyst1
+Password (will be hidden):
+
+Error authenticating: Error making API request.
+
+URL: PUT http://127.0.0.1:8200/v1/auth/userpass/login/analyst1
+Code: 400. Errors:
+
+* invalid username or password
+PS C:\Users\Dell\projects\enterprise-pam-security-lab> vault login -no-print root
+PS C:\Users\Dell\projects\enterprise-pam-security-lab> vault write auth/userpass/users/analyst1/password password=Analyst123
+Success! Data written to: auth/userpass/users/analyst1/password
+PS C:\Users\Dell\projects\enterprise-pam-security-lab> vault write auth/userpass/users/pamadmin1/password password=PamAdmin123
+Success! Data written to: auth/userpass/users/pamadmin1/password
+PS C:\Users\Dell\projects\enterprise-pam-security-lab> vault login -method=userpass username=analyst1 password=Analyst123
+Success! You are now authenticated. The token information displayed below
+is already stored in the token helper. You do NOT need to run "vault login"
+again. Future Vault requests will automatically use this token.
+
+Key                    Value
+---                    -----
+token                  hvs.<redacted>
+token_accessor         YAjjVDwUjB7MRsCu1qS8cqBq
+token_duration         1h
+token_renewable        true
+token_policies         ["analyst" "default"]
+identity_policies      []
+policies               ["analyst" "default"]
+token_meta_username    analyst1
+PS C:\Users\Dell\projects\enterprise-pam-security-lab> vault kv get secret/privileged/linux-admin
+=========== Secret Path ===========
+secret/data/privileged/linux-admin
+
+======= Metadata =======
+Key                Value
+---                -----
+created_time       2026-10-19T06:23:35.7871899Z
+custom_metadata    <nil>
+deletion_time      n/a
+destroyed          false
+version            1
+
+====== Data ======
+Key         Value
+---         -----
+password    LabPass123!
+username    linux-admin
+PS C:\Users\Dell\projects\enterprise-pam-security-lab> vault kv put secret/privileged/test-account username=t password=x
+
+Error writing data to secret/data/privileged/test-account: Error making API request.
+
+URL: PUT http://127.0.0.1:8200/v1/secret/data/privileged/test-account
+Code: 403. Errors:
+
+* 1 error occurred:
+        * permission denied
+
+
+PS C:\Users\Dell\projects\enterprise-pam-security-lab> vault policy read analyst
+Error reading policy named analyst: Error making API request.
+
+URL: GET http://127.0.0.1:8200/v1/sys/policies/acl/analyst
+Code: 403. Errors:
+
+* 1 error occurred:
+        * permission denied
+
+
+PS C:\Users\Dell\projects\enterprise-pam-security-lab> vault login -method=userpass username=pamadmin1 password=PamAdmin123
+Success! You are now authenticated. The token information displayed below
+is already stored in the token helper. You do NOT need to run "vault login"
+again. Future Vault requests will automatically use this token.
+
+Key                    Value
+---                    -----
+token                  hvs.<redacted>
+token_accessor         YgyqQ8Bi5VM3J7D9T3lcNJbl
+token_duration         1h
+token_renewable        true
+token_policies         ["default" "pam-admin"]
+identity_policies      []
+policies               ["default" "pam-admin"]
+token_meta_username    pamadmin1
+PS C:\Users\Dell\projects\enterprise-pam-security-lab> vault kv put secret/privileged/svc-backup username=svc-backup "password=Temp123!"
+========== Secret Path ==========
+secret/data/privileged/svc-backup
+
+======= Metadata =======
+Key                Value
+---                -----
+created_time       2026-10-19T06:25:33.8627679Z
+custom_metadata    <nil>
+deletion_time      n/a
+destroyed          false
+version            1
+PS C:\Users\Dell\projects\enterprise-pam-security-lab> vault audit disable file/
+Error disabling audit device: Error making API request.
+
+URL: DELETE http://127.0.0.1:8200/v1/sys/audit/file
+Code: 403. Errors:
+
+* 1 error occurred:
+        * permission denied
+
+
+PS C:\Users\Dell\projects\enterprise-pam-security-lab> vault policy write analyst vault\policies\analyst-policy.hcl
+Error uploading policy: Error making API request.
+
+URL: PUT http://127.0.0.1:8200/v1/sys/policies/acl/analyst
+Code: 403. Errors:
+
+* 1 error occurred:
+        * permission denied
+
+
+PS C:\Users\Dell\projects\enterprise-pam-security-lab>
+PS C:\Users\Dell\projects\enterprise-pam-security-lab> python scripts\rotate_password.py linux-admin svc-backup
+{
+  "account": "linux-admin",
+  "vault_path": "secret/privileged/linux-admin",
+  "rotation_status": "SUCCESS",
+  "vault_version": 2,
+  "identity": "approle:rotation-service",
+  "timestamp": "2026-10-19T06:26:03.796619+00:00"
+}
+{
+  "account": "svc-backup",
+  "vault_path": "secret/privileged/svc-backup",
+  "rotation_status": "SUCCESS",
+  "vault_version": 2,
+  "identity": "approle:rotation-service",
+  "timestamp": "2026-10-19T06:26:03.919045+00:00"
+}
+PS C:\Users\Dell\projects\enterprise-pam-security-lab> Get-Content logs\rotation-history.jsonl
+{"account": "linux-admin", "vault_path": "secret/privileged/linux-admin", "rotation_status": "SUCCESS", "vault_version": 2, "identity": "approle:rotation-service", "timestamp": "2026-10-19T06:26:03.796619+00:00"}
+{"account": "svc-backup", "vault_path": "secret/privileged/svc-backup", "rotation_status": "SUCCESS", "vault_version": 2, "identity": "approle:rotation-service", "timestamp": "2026-10-19T06:26:03.919045+00:00"}
+PS C:\Users\Dell\projects\enterprise-pam-security-lab> $env:VAULT_TOKEN = vault write -field=token auth/approle/login role_id=$env:VAULT_ROLE_ID secret_id=$env:VAULT_SECRET_ID
+PS C:\Users\Dell\projects\enterprise-pam-security-lab> vault kv get secret/privileged/linux-admin
+Error reading secret/data/privileged/linux-admin: Error making API request.
+
+URL: GET http://127.0.0.1:8200/v1/secret/data/privileged/linux-admin
+Code: 403. Errors:
+
+* 1 error occurred:
+        * permission denied
+
+
+PS C:\Users\Dell\projects\enterprise-pam-security-lab> Remove-Item Env:VAULT_TOKEN
+PS C:\Users\Dell\projects\enterprise-pam-security-lab> vault kv metadata get secret/privileged/linux-admin
+============ Metadata Path ============
+secret/metadata/privileged/linux-admin
+
+========== Metadata ==========
+Key                     Value
+---                     -----
+cas_required            false
+created_time            2026-10-19T06:23:35.7871899Z
+current_version         2
+custom_metadata         <nil>
+delete_version_after    0s
+last_updated_by         map[actor:approle client_id:95e37a66-330c-afcf-6440-8972fc0fdc4e entity_id:95e37a66-330c-afcf-6440-8972fc0fdc4e operation:update]
+max_versions            0
+oldest_version          0
+updated_time            2026-10-19T06:26:03.7860491Z
+
+====== Version 1 ======
+Key              Value
+---              -----
+created_by       {"actor":"token","client_id":"0DHqvq2D77kL2/JTPSZkTMJbkFVmUu0TzMi0jiXcFy8=","operation":"create"}
+created_time     2026-10-19T06:23:35.7871899Z
+deleted_by       <nil>
+deletion_time    n/a
+destroyed        false
+
+====== Version 2 ======
+Key              Value
+---              -----
+created_by       {"actor":"approle","client_id":"95e37a66-330c-afcf-6440-8972fc0fdc4e","entity_id":"95e37a66-330c-afcf-6440-8972fc0fdc4e","operation":"update"}
+created_time     2026-10-19T06:26:03.7860491Z
+deleted_by       <nil>
+deletion_time    n/a
+destroyed        false
+PS C:\Users\Dell\projects\enterprise-pam-security-lab> python scripts\audit_report.py C:\vault\audit.log -o evidence\audit-report.md
+wrote evidence\audit-report.md (42 requests)
+PS C:\Users\Dell\projects\enterprise-pam-security-lab> Get-Content evidence\audit-report.md -TotalCount 35
+# Vault Audit Evidence Report
+
+Source log: `C:\vault\audit.log`
+Window: 2026-09-17T12:07:37.67466Z to 2026-10-19T06:26:43.0354696Z
+
+## Summary
+
+- Requests: **42**
+- Allowed: **36**
+- Denied: **5**
+- Requests made with the root token: **2**  <- review: day-to-day work should use named identities
+
+## Activity by identity (WHO)
+
+| Identity | Policies | Allowed | Denied |
+|---|---|---|---|
+| (unauthenticated) |  | 0 | 0 |
+| approle | default,rotation-service | 4 | 1 |
+| root | root | 2 | 0 |
+| token | root | 25 | 0 |
+| userpass-analyst1 | analyst,default | 2 | 2 |
+| userpass-pamadmin1 | default,pam-admin | 3 | 2 |
+
+## Denied requests
+
+| Time | Who | Operation | Path | Error |
+|---|---|---|---|---|
+| 2026-10-19T06:25:10.2634332Z | userpass-analyst1 | create | secret/data/privileged/test-account | 1 error occurred: * permission denied |
+| 2026-10-19T06:25:31.498507Z | userpass-analyst1 | read | sys/policies/acl/analyst | 1 error occurred: * permission denied |
+| 2026-10-19T06:25:34.0046669Z | userpass-pamadmin1 | delete | sys/audit/file | 1 error occurred: * permission denied |
+| 2026-10-19T06:25:34.1769738Z | userpass-pamadmin1 | update | sys/policies/acl/analyst | 1 error occurred: * permission denied |
+| 2026-10-19T06:26:20.2930259Z | approle | read | secret/data/privileged/linux-admin | 1 error occurred: * permission denied |
+
+## Full trail (WHO / WHAT / WHEN / RESULT)
+
+PS C:\Users\Dell\projects\enterprise-pam-security-lab> Stop-Transcript
+Transcript stopped, output file is C:\Users\Dell\projects\enterprise-pam-security-lab\evidence\lab-session-transcript.txt

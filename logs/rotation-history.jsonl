@@ -1,0 +1,2 @@
+{"account": "linux-admin", "vault_path": "secret/privileged/linux-admin", "rotation_status": "SUCCESS", "vault_version": 2, "identity": "approle:rotation-service", "timestamp": "2026-10-19T06:26:03.796619+00:00"}
+{"account": "svc-backup", "vault_path": "secret/privileged/svc-backup", "rotation_status": "SUCCESS", "vault_version": 2, "identity": "approle:rotation-service", "timestamp": "2026-10-19T06:26:03.919045+00:00"}
